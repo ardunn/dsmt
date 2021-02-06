@@ -25,6 +25,7 @@ with open(CONFIG_FILE, "r") as f:
 check_img = html.Img(src="/assets/check.png", style={"width": "30px", "height": "30px"})
 x_img = html.Img(src="/assets/x.png", style={"width": "30px", "height": "30px"})
 update_interval = CONFIG["dsmt"]["update_interval"]
+port = int(CONFIG_FILE["port"])
 interval = 0.1
 
 table_style = "table is-bordered is-centered"
@@ -173,5 +174,5 @@ app.title = "dmst"
 
 
 if __name__ == '__main__':
-    # app.run_server(debug=True)
-    app.run_server(host="0.0.0.0", port=57031)
+    # app.run_server(debug=True, port=port)
+    app.run_server(host="0.0.0.0", port=port)

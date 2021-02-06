@@ -87,5 +87,5 @@ python dmst/dmst_app.py
 
 Check the end of the `dmst_app.py` file to ensure the server is running in server (not debug) mode.
 
-
+It runs on port 57031 by default.
 
