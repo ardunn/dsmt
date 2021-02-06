@@ -1,0 +1,38 @@
+{
+  "ps": {
+    "dogecoin minerd": {
+      "query": "minerd",
+      "description": "Dogecoin Pool Miner",
+      "ports": [22556]
+    },
+    "bitcoind": {
+      "query": "bitcoind",
+      "description": "Bitcoin Headless Daemon Full Node",
+      "ports": [8333]
+    },
+    "bitcoin-qt": {
+      "query": "bitcoin-qt",
+      "description": "Bitcoin-QT Full Node",
+      "ports": [8333]
+    },
+    "dogecoin-qt": {
+      "query": "dogecoin-qt",
+      "description": "Dogecoin-QT Full Node",
+      "ports": [22556]
+    }
+  },
+  "systemd": {
+    "sshd": {
+      "query": "sshd",
+      "description": "SSH/SFTP",
+      "ports": [57032]
+    },
+    "cockpit": {
+      "query": "cockpit.service",
+      "description": "Advanced monitoring",
+      "ports": [9090]
+    }
+  },
+
+  "docker": true
+  }
