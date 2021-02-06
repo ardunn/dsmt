@@ -68,6 +68,7 @@ SystemD processes require the same as regular processes:
 DSMT options are under the `dsmt` section of `config.json`.
 
 - `update-interval` controls how often the CPU usage is updated.
+- `port` determines what port the server runs on.
 
 ---
 
