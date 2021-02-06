@@ -19,12 +19,14 @@ or not on the server are made quite complicated.
 
 DSMT is a super simple and minimal monitoring web UI focused on monitoring *only* the most important thing: whether the services I'm hosting are up or down.
 
+---
 
 ### Supports
 - Linux system processes and process groups
 - Docker containers
 - SystemD services
 
+---
 
 ###  Install
 
@@ -33,6 +35,7 @@ git clone https://github.com/ardunn/dsmt
 pip install dmst
 ```
 
+---
 
 ### Configure
 Navigate to the `./dmst/config.json` file. This contains an example of
@@ -60,7 +63,13 @@ SystemD processes require the same as regular processes:
 - **description**: your description of the process
 
 
+#### DSMT
 
+DSMT options are under the `dsmt` section of `config.json`.
+
+- `update-interval` controls how often the CPU usage is updated.
+
+---
 
 ### Usage
 
