@@ -27,6 +27,12 @@ x_img = html.Img(src="/assets/x.png", style={"width": "30px", "height": "30px"})
 update_interval = CONFIG["dsmt"]["update_interval"]
 interval = 0.1
 
+table_style = "table is-bordered is-centered"
+header_style = "title is-2"
+box_style = "box is-fullwidth"
+monospace_style = "is-family-monospace"
+
+divider = html.Div(className="is-divider")
 
 def html_status_tables():
 
@@ -50,7 +56,7 @@ def html_status_tables():
             plist_cpu = "null"
 
         ptable_rows.append(html.Tr([
-            html.Td(pname),
+            html.Td(pname, className=monospace_style),
             html.Td(check_img if running else x_img),
             html.Td(pids_formatted),
             html.Td(pinfo['description']),
@@ -58,8 +64,8 @@ def html_status_tables():
             html.Td(plist_cpu)
         ]))
 
-    proc_table = html.Table(ptable_header + ptable_rows)
-    proc_div = html.Div([html.H2("Processes"),  proc_table])
+    proc_table = html.Table(ptable_header + ptable_rows, className=table_style)
+    proc_div = html.Div([html.Div("Processes", className=header_style),  proc_table], className=box_style)
 
     # Docker with default configuration running locally
     if CONFIG["docker"]:
@@ -67,7 +73,7 @@ def html_status_tables():
         dtable_rows = []
 
         client = docker.from_env()
-        for c in client.containers.list():
+        for c in client.containers.list(all=True):
 
             running = True if c.status == "running" else False
             if c.ports:
@@ -81,15 +87,15 @@ def html_status_tables():
 
 
             dtable_rows.append(html.Tr([
-                html.Td(c.name),
+                html.Td(c.name, className=monospace_style),
                 html.Td(check_img if running else x_img),
                 html.Td(c.status),
                 html.Td(c.image.attrs["RepoTags"][0]),
                 html.Td(ports_html),
             ]))
 
-        docker_table = html.Table(dtable_header + dtable_rows)
-        docker_div = html.Div([html.H2("Docker containers"), docker_table])
+        docker_table = html.Table(dtable_header + dtable_rows, className=table_style)
+        docker_div = html.Div([html.Div("Docker containers", className=header_style), docker_table], className=box_style)
     else:
         docker_div = html.Div(children='')
 
@@ -107,8 +113,6 @@ def html_status_tables():
         status_dirty = [i for i in infolist if "Active: " in i][0]
         running = True if "(running) since" in status_dirty else False
 
-
-
         try:
             cpu_usage = psutil.Process(pid_clean).cpu_percent(interval=interval)
             cpu_usage = f"{cpu_usage}%"
@@ -116,7 +120,7 @@ def html_status_tables():
             cpu_usage = "N/A"
 
         stable_rows.append(html.Tr([
-            html.Td(sname),
+            html.Td(sname, className=monospace_style),
             html.Td(check_img if running else x_img),
             html.Td(pid_dirty),
             html.Td(f"{sinfo['description']} ({desc_dirty})"),
@@ -124,9 +128,9 @@ def html_status_tables():
             html.Td(cpu_usage)
         ]))
 
-    systemd_table = html.Table(stable_header + stable_rows)
-    systemd_div = html.Div([html.H2("SystemD services"), systemd_table])
-    return html.Div(id="display", children=[proc_div, docker_div, systemd_div])
+    systemd_table = html.Table(stable_header + stable_rows,  className=table_style)
+    systemd_div = html.Div([html.Div("SystemD services", className=header_style), systemd_table], className=box_style)
+    return html.Div(id="display", children=[proc_div, divider, docker_div, divider, systemd_div])
 
 
 
@@ -143,8 +147,10 @@ app.layout = html.Div(children=[
             id='interval-component',
             interval=update_interval, # in milliseconds
             n_intervals=0
-        )
-])
+        ),
+],
+className="container is-centered"
+)
 
 if __name__ == '__main__':
     app.run_server(debug=True)
