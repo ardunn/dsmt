@@ -25,7 +25,7 @@ with open(CONFIG_FILE, "r") as f:
 check_img = html.Img(src="/assets/check.png", style={"width": "30px", "height": "30px"})
 x_img = html.Img(src="/assets/x.png", style={"width": "30px", "height": "30px"})
 update_interval = CONFIG["dsmt"]["update_interval"]
-port = int(CONFIG_FILE["port"])
+port = int(CONFIG["dsmt"]["port"])
 interval = 0.1
 
 table_style = "table is-bordered is-centered"
