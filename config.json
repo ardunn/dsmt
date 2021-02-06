@@ -3,6 +3,11 @@
     "update_interval": 5000
   },
   "ps": {
+    "dsmt_app":{
+      "query": "dsmt_app.py",
+      "description": "This application",
+      "ports": [57031]
+    },
     "dogecoin minerd": {
       "query": "minerd",
       "description": "Dogecoin Pool Miner",

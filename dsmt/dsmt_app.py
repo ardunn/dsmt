@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Run this app with `python app.py` and
+# Run this app with `python dsmt_app.py` and
 # visit http://127.0.0.1:8050/ in your web browser.
 
 import os
@@ -36,24 +36,35 @@ divider = html.Div(className="is-divider")
 
 def html_status_tables():
 
+
+
     # Process scanning
-    PS_CONFIG = CONFIG["ps"]
+    ps_config = CONFIG["ps"]
+
+    # Add this process into the
     ptable_header = [html.Tr([html.Th(label) for label in ["Process Group", "Running?", "PIDs", "Description", "Ports", "CPU"]])]
     ptable_rows = []
 
-    for pname, pinfo in PS_CONFIG.items():
+    for pname, pinfo in ps_config.items():
 
         pq = pinfo["query"]
         plist = ps_query(pq)
+
         if plist:
             running = True
             pids_formatted =  ",".join(str(p.pid) for p in plist)
             plist_cpu = sum([p.cpu_percent(interval=interval) for p in plist])/psutil.cpu_count()
             plist_cpu = f"{plist_cpu}%"
         else:
-            running = False
-            pids_formatted = "null"
-            plist_cpu = "null"
+            if pname == "dsmt_app":
+                running = True
+                pids_formatted = os.getpid()
+                plist_cpu = psutil.Process(pids_formatted).cpu_percent(interval=interval)/psutil.cpu_count()
+                plist_cpu = f"{plist_cpu}%"
+            else:
+                running = False
+                pids_formatted = "null"
+                plist_cpu = "null"
 
         ptable_rows.append(html.Tr([
             html.Td(pname, className=monospace_style),
@@ -63,6 +74,7 @@ def html_status_tables():
             html.Td(pinfo["ports"]),
             html.Td(plist_cpu)
         ]))
+
 
     proc_table = html.Table(ptable_header + ptable_rows, className=table_style)
     proc_div = html.Div([html.Div("Processes", className=header_style),  proc_table], className=box_style)
@@ -153,4 +165,5 @@ className="container is-centered"
 )
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    # app.run_server(debug=True)
+    app.run_server(host="0.0.0.0", port=57031)
