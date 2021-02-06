@@ -120,10 +120,15 @@ def html_status_tables():
         infolist = [i.strip() for i in info.split("\n")]
 
         desc_dirty = infolist[0]
-        pid_dirty = [i for i in infolist if "Main PID:" in i][0].replace("Main PID: ", "")
-        pid_clean = int(pid_dirty.split(" ")[0].strip())
         status_dirty = [i for i in infolist if "Active: " in i][0]
         running = True if "(running) since" in status_dirty else False
+
+        if running:
+            pid_dirty = [i for i in infolist if "Main PID:" in i][0].replace("Main PID: ", "")
+            pid_clean = int(pid_dirty.split(" ")[0].strip())
+        else:
+            pid_dirty = "null"
+            pid_clean = "null"
 
         try:
             cpu_usage = psutil.Process(pid_clean).cpu_percent(interval=interval)
