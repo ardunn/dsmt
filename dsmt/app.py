@@ -42,6 +42,7 @@ def html_status_tables():
             running = True
             pids_formatted =  ",".join(str(p.pid) for p in plist)
             plist_cpu = sum([p.cpu_percent(interval=interval) for p in plist])/psutil.cpu_count()
+            plist_cpu = f"{plist_cpu}%"
         else:
             running = False
             pids_formatted = "null"
@@ -108,6 +109,7 @@ def html_status_tables():
 
         try:
             cpu_usage = psutil.Process(pid_clean).cpu_percent(interval=interval)
+            cpu_usage = f"{cpu_usage}%"
         except:
             cpu_usage = "N/A"
 
