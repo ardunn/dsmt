@@ -64,9 +64,19 @@ SystemD processes require the same as regular processes:
 
 ### Usage
 
+To run the server in a janky daemon mode, just use `run.sh` in the root directory.
+
+```
+source run.sh
+```
+
+You can also:
+
 ```
 python dmst/dmst_app.py
 ```
 
-
 Check the end of the `dmst_app.py` file to ensure the server is running in server (not debug) mode.
+
+
+
