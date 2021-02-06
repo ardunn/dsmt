@@ -11,7 +11,7 @@ Written in python and plotly dash.
 
 ### Motivation
 
-I run a homelab server with various web-UIs and daemon processes. I need to monitor when they
+I run a homelab server with various web-UIs and daemon processes spread across systemd services, docker containers, and plain linux processes. I need to monitor when they
 are up or go down. Existing tools like Grafana and LibreRMS (among a billion others)
 are awesome but are mostly configured for enterprise or structured database access; monitoring simple things like whether a process is running
 or not on the server are made quite complicated.
