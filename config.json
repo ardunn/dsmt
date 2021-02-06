@@ -1,4 +1,7 @@
 {
+  "dsmt": {
+    "update_interval": 5000
+  },
   "ps": {
     "dogecoin minerd": {
       "query": "minerd",

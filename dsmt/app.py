@@ -24,6 +24,7 @@ with open(CONFIG_FILE, "r") as f:
 
 check_img = html.Img(src="/assets/check.png", style={"width": "30px", "height": "30px"})
 x_img = html.Img(src="/assets/x.png", style={"width": "30px", "height": "30px"})
+update_interval = CONFIG["dsmt"]["update_interval"]
 interval = 0.1
 
 
@@ -78,12 +79,13 @@ def html_status_tables():
             else:
                 ports_html = "null"
 
+
             dtable_rows.append(html.Tr([
                 html.Td(c.name),
                 html.Td(check_img if running else x_img),
                 html.Td(c.status),
                 html.Td(c.image.attrs["RepoTags"][0]),
-                html.Td(ports_html)
+                html.Td(ports_html),
             ]))
 
         docker_table = html.Table(dtable_header + dtable_rows)
@@ -139,7 +141,7 @@ app.layout = html.Div(children=[
     html.Div(id="display-holder"),
     dcc.Interval(
             id='interval-component',
-            interval=1000, # in milliseconds
+            interval=update_interval, # in milliseconds
             n_intervals=0
         )
 ])
