@@ -319,7 +319,8 @@ app.layout = html.Div(children=[
             html.Div(id="speed-info"),
 
             dcc.Loading(
-                dcc.Graph(id="speed-update-graph", className="is-centered")
+                type="circle",
+                children=dcc.Graph(id="speed-update-graph", className="is-centered")
             )
             ],
         className=box_style + " has-margin-top-30"
