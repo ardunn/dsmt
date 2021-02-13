@@ -1,7 +1,9 @@
 {
   "dsmt": {
     "update_interval": 5000,
-    "port": 57031
+    "port": 57031,
+    "inet_speed": true,
+    "inet_interval": 60000
   },
   "ps": {
     "dsmt_app":{

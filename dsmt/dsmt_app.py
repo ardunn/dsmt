@@ -5,14 +5,18 @@
 
 import os
 import json
+import datetime
+
 import docker
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
+import plotly
 import psutil
 
 from dsmt.process import ps_query
+from dsmt.speed import test_speed
 
 
 app = dash.Dash(__name__)
@@ -25,12 +29,14 @@ with open(CONFIG_FILE, "r") as f:
 check_img = html.Img(src="/assets/check.png", style={"width": "30px", "height": "30px"})
 x_img = html.Img(src="/assets/x.png", style={"width": "30px", "height": "30px"})
 update_interval = CONFIG["dsmt"]["update_interval"]
+speed_interval = int(CONFIG["dsmt"]["inet_interval"])
 port = int(CONFIG["dsmt"]["port"])
 interval = 0.1
 
-table_style = "table is-bordered is-centered"
-header_style = "title is-2"
-box_style = "box is-fullwidth"
+table_header_style = "has-text-white"
+table_style = "table is-bordered is-centered has-text-white has-background-dark"
+header_style = "title is-2 has-text-white"
+box_style = "box is-fullwidth has-background-dark"
 monospace_style = "is-family-monospace"
 
 divider = html.Div(className="is-divider")
@@ -43,7 +49,7 @@ def html_status_tables():
     ps_config = CONFIG["ps"]
 
     # Add this process into the
-    ptable_header = [html.Tr([html.Th(label) for label in ["Process Group", "Running?", "PIDs", "Description", "Ports", "CPU"]])]
+    ptable_header = [html.Tr([html.Th(label, className=table_header_style) for label in ["Process Group", "Running?", "PIDs", "Description", "Ports", "CPU"]])]
     ptable_rows = []
 
     for pname, pinfo in ps_config.items():
@@ -82,7 +88,7 @@ def html_status_tables():
 
     # Docker with default configuration running locally
     if CONFIG["docker"]:
-        dtable_header = [html.Tr([html.Th(label) for label in ["Container Name", "Running?", "Status", "Image", "Ports"]])]
+        dtable_header = [html.Tr([html.Th(label, className=table_header_style) for label in ["Container Name", "Running?", "Status", "Image", "Ports"]])]
         dtable_rows = []
 
         client = docker.from_env()
@@ -113,7 +119,7 @@ def html_status_tables():
         docker_div = html.Div(children='')
 
     # SystemD services
-    stable_header = [html.Tr([html.Th(label) for label in ["Service name",  "Running?", "Main PID", "Description", "Ports", "CPU"]])]
+    stable_header = [html.Tr([html.Th(label, className=table_header_style) for label in ["Service name",  "Running?", "Main PID", "Description", "Ports", "CPU"]])]
     stable_rows = []
     for sname, sinfo in CONFIG["systemd"].items():
         squery = sinfo["query"]
@@ -151,28 +157,155 @@ def html_status_tables():
     return html.Div(id="display", children=[proc_div, divider, docker_div, divider, systemd_div])
 
 
+# todo: remove this
+import random
+
+def html_uptime_graphs(prev_data):
+
+
+    # debugging
+    # prev_data["pings"].append(random.random())
+    # prev_data["downs"].append(random.random() * 1000)
+    # prev_data["ups"].append(random.random() * 10)
+
+    print("about to run speedtest")
+
+    results = test_speed()
+    prev_data["pings"].append(results["ping"])
+    prev_data["downs"].append(results["download"]/1e6)
+    prev_data["ups"].append(results["upload"]/1e6)
+
+
+    prev_data["datetimes"].append(results["timestamp"])
+
+
+    ping_title = f"Ping {common_title}"
+    download_title = f"Download {common_title}"
+    upload_title = f"Upload {common_title}"
+
+
+    fig = plotly.tools.make_subplots(rows=3, cols=1, subplot_titles=(ping_title, download_title, upload_title))
+
+    fig.append_trace({
+        "y": prev_data["pings"],
+        "x": prev_data["datetimes"],
+        "name": "pings",
+        "mode": "lines+markers",
+        "type": "scatter"
+    }, 1, 1)
+
+    fig.append_trace({
+        "y": prev_data["downs"],
+        "x": prev_data["datetimes"],
+        "name": "downloads",
+        "mode": "lines+markers",
+        "type": "scatter"
+    }, 2, 1)
+
+    fig.append_trace({
+        "y": prev_data["ups"],
+        "x": prev_data["datetimes"],
+        "name": "uploads",
+        "mode": "lines+markers",
+        "type": "scatter",
+    }, 3, 1)
+
+    fig.update_layout(
+        autosize=False,
+        width=1200,
+        height=1000,
+        margin=dict(
+            l=50,
+            r=50,
+            b=100,
+            t=100,
+            pad=4
+        ),
+        template="plotly_dark"
+    )
+    return fig
+
+
+
 
 @app.callback(
-    Output('display-holder', 'children'),
-    Input('interval-component', 'n_intervals')
+    Output('holder-service', 'children'),
+    Input('interval-service', 'n_intervals')
 )
 def update_output_div(input_value):
     return html_status_tables()
 
+
+
+@app.callback(
+    Output('speed-update-graph', 'figure'),
+    Input('interval-speed', 'n_intervals'),
+    State('speed-update-graph', 'figure')
+)
+def update_uptime_graphs(interval, figure):
+
+    if figure:
+        ping_data = figure["data"][0]
+        datetimes = ping_data["x"]
+        pings = ping_data["y"]
+
+
+        down_data = figure["data"][1]
+        download = down_data["y"]
+
+        up_data = figure["data"][2]
+        upload = up_data["y"]
+
+        prev_data = {"pings": pings, "downs": download, "ups": upload, "datetimes": datetimes}
+    else:
+        prev_data = {"pings": [], "downs": [], "ups": [], "datetimes": []}
+    return html_uptime_graphs(prev_data)
+
+
+
+@app.callback(
+    Output("speed-title", "children"),
+    Input("interval-speed")
+)
+def update_uptime_title(interval):
+    results = test_speed(ping_only=True)
+
+    host_url = results["server"]["url"]
+    host_name = results["server"]["name"]
+    ip = results["client"]["ip"]
+    isp = results["client"]["isp"]
+
+    html_url = html.Div(f"{host_url}"
+    html_info = html.Div(f"{host_name} from {ip} (ISP {isp})"
+
+
 app.layout = html.Div(children=[
-    html.Div(id="display-holder"),
+    html.Div(id="holder-service"),
     dcc.Interval(
-            id='interval-component',
+            id='interval-service',
             interval=update_interval, # in milliseconds
             n_intervals=0
         ),
+
+    html.Div(
+        children=[
+            html.Div(id="speed-title", children="ISP Monitoring", className=header_style),
+            dcc.Graph(id="speed-update-graph")
+            ],
+        className=box_style
+     ),
+    dcc.Interval(
+        id='interval-speed',
+        interval=speed_interval,  # in milliseconds
+        n_intervals=0
+    ),
 ],
-className="container is-centered"
+className="container is-centered has-background-dark"
 )
 
 app.title = "dmst"
 
 
 if __name__ == '__main__':
-    # app.run_server(debug=True, port=port)
-    app.run_server(host="0.0.0.0", port=port)
+    app.run_server(debug=True, port=port)
+    # app.run_server(host="0.0.0.0", port=port)
