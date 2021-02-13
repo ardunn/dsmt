@@ -4,14 +4,18 @@ import speedtest
 
 
 def test_speed(ping_only=False):
-    s = speedtest.Speedtest()
-    s.get_servers()
-    s.get_best_server()
 
-    if not ping_only:
-        s.download()
-        s.upload()
-    res = s.results.dict()
+    try:
+        s = speedtest.Speedtest()
+        s.get_servers()
+        s.get_best_server()
+
+        if not ping_only:
+            s.download()
+            s.upload()
+        res = s.results.dict()
+    except speedtest.ConfigRetrievalError:
+        res = None
     return res
 
 

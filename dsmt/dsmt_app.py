@@ -157,28 +157,35 @@ def html_status_tables():
     return html.Div(id="display", children=[proc_div, divider, docker_div, divider, systemd_div])
 
 
-# todo: remove this
-import random
-
 def html_uptime_graphs(prev_data):
-
-
-    # debugging
-    # prev_data["pings"].append(random.random())
-    # prev_data["downs"].append(random.random() * 1000)
-    # prev_data["ups"].append(random.random() * 10)
 
     print("about to run speedtest")
 
     results = test_speed()
-    prev_data["pings"].append(results["ping"])
-    prev_data["downs"].append(results["download"]/1e6)
-    prev_data["ups"].append(results["upload"]/1e6)
+
+    if results:
+        prev_data["pings"].append(results["ping"])
+        prev_data["downs"].append(results["download"]/1e6)
+        prev_data["ups"].append(results["upload"]/1e6)
+        prev_data["datetimes"].append(datetime.datetime.now().isoformat())
+    else:
+        prev_data["pings"].append(10000)
+        prev_data["downs"].append(0)
+        prev_data["ups"].append(0)
+        prev_data["datetimes"].append(datetime.datetime.now().isoformat())
+
+    ping_recent = int(prev_data["pings"][-1])
+    ping_recent = f"{ping_recent} ms" if ping_recent < 10000 else "No connection"
+    ping_title = f"Ping (current = {ping_recent})"
 
 
-    prev_data["datetimes"].append(results["timestamp"])
+    down_recent = prev_data["downs"][-1]
+    down_title = f"Download (current = {int(down_recent)} MBits/s)"
 
-    fig = plotly.tools.make_subplots(rows=3, cols=1, subplot_titles=("Ping", "Download", "Upload"))
+    up_recent = prev_data["ups"][-1]
+    up_title = f"Upload (current = {int(up_recent)} MBits/s)"
+
+    fig = plotly.tools.make_subplots(rows=3, cols=1, subplot_titles=(ping_title, down_title, up_title))
 
     fig.append_trace({
         "y": prev_data["pings"],
@@ -204,6 +211,11 @@ def html_uptime_graphs(prev_data):
         "type": "scatter",
     }, 3, 1)
 
+    fig.update_yaxes(title_text="ping (ms) [log scale]", type="log", row=1, col=1)
+    fig.update_yaxes(title_text="MBit/s", row=2, col=1)
+    fig.update_yaxes(title_text="MBit/s", row=3, col=1)
+    fig.update_xaxes(showticklabels=False, row=1, col=1)
+    fig.update_xaxes(showticklabels=False, row=2, col=1)
     fig.update_layout(
         autosize=False,
         # width=1200,
@@ -264,18 +276,22 @@ def update_uptime_graphs(interval, figure):
 def update_uptime_title(interval):
     results = test_speed(ping_only=True)
 
-    host_url = results["server"]["url"]
-    host_name = results["server"]["name"]
-    ip = results["client"]["ip"]
-    isp = results["client"]["isp"]
+    if results:
+        host_url = results["server"]["url"]
+        host_name = results["server"]["name"]
+        ip = results["client"]["ip"]
+        isp = results["client"]["isp"]
 
-    html_url = html.Div(f"{host_url}", className=monospace_style + " has-text-white is-5")
-    html_info = html.Div(f"{host_name} from {ip} (ISP {isp})", className="has-text-white is-3")
-    return html.Div(children=[
-        html_url,
-        html_info
-    ],
-    className="has-margin-20")
+        html_url = html.Div(f"{host_url}", className=monospace_style + " has-text-white is-5")
+        html_info = html.Div(f"{host_name} from {ip} (ISP {isp})", className="has-text-white is-3")
+
+        return html.Div(children=[
+            html_url,
+            html_info
+        ],
+        className="has-margin-20")
+    else:
+        return html.Div("No connection.", className="has-margin-20 has-text-white is-5")
 
 
 app.layout = html.Div(children=[
@@ -292,7 +308,7 @@ app.layout = html.Div(children=[
             html.Div(id="speed-info"),
             dcc.Graph(id="speed-update-graph", className="is-centered")
             ],
-        className=box_style
+        className=box_style + " has-margin-top-30"
      ),
     dcc.Interval(
         id='interval-speed',
