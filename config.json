@@ -2,8 +2,9 @@
   "dsmt": {
     "update_interval": 5000,
     "port": 57031,
-    "inet_speed": true,
-    "inet_interval": 60000
+    "inet_interval": 60000,
+    "server_name": "Ares",
+    "server_description": "Alex's really nerdy server."
   },
   "ps": {
     "dsmt_app":{

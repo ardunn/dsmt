@@ -25,6 +25,7 @@ DSMT is a super simple and minimal monitoring web UI focused on monitoring *only
 - Linux system processes and process groups
 - Docker containers
 - SystemD services
+- Periodically checking ISP connection (i.e., what speeds are they really giving me?)
 
 ---
 
@@ -69,7 +70,9 @@ DSMT options are under the `dsmt` section of `config.json`.
 
 - `update-interval` controls how often the CPU usage is updated.
 - `port` determines what port the server runs on.
-
+- `inet_interval`: interval in milliseconds to check the ISP connection
+- `server_name`: the display name of your server
+- `description`: the display description of your server
 ---
 
 ### Usage

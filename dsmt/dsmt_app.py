@@ -34,12 +34,17 @@ speed_interval = int(CONFIG["dsmt"]["inet_interval"])
 port = int(CONFIG["dsmt"]["port"])
 interval = 0.1
 isp_path = os.path.join(os.path.dirname(CONFIG_FILE), "isp.csv")
+server_name = CONFIG["dsmt"]["server_name"]
+server_description = CONFIG["dsmt"]["server_description"]
 
+page_header_style = "title has-text-white is-1"
+page_description_style = "has-text-white is-4"
 table_header_style = "has-text-white"
 table_style = "table is-bordered is-centered has-text-white has-background-dark"
 header_style = "title is-2 has-text-white"
 box_style = "box is-fullwidth has-background-dark"
 monospace_style = "is-family-monospace"
+
 
 divider = html.Div(className="is-divider")
 
@@ -157,8 +162,6 @@ def html_status_tables():
     systemd_table = html.Table(stable_header + stable_rows,  className=table_style)
     systemd_div = html.Div([html.Div("SystemD services", className=header_style), systemd_table], className=box_style)
     return html.Div(id="display", children=[proc_div, divider, docker_div, divider, systemd_div])
-
-
 
 
 def html_uptime_graphs(prev_data):
@@ -306,6 +309,7 @@ def update_uptime_title(interval):
 
 
 app.layout = html.Div(children=[
+    html.Div([html.Div(server_name, className=page_header_style), html.Div(server_description, className=page_description_style)], className="has-margin-20"),
     html.Div(id="holder-service"),
     dcc.Interval(
             id='interval-service',
@@ -317,11 +321,7 @@ app.layout = html.Div(children=[
         children=[
             html.Div(children="ISP Monitoring", className=header_style),
             html.Div(id="speed-info"),
-
-            dcc.Loading(
-                type="circle",
-                children=dcc.Graph(id="speed-update-graph", className="is-centered")
-            )
+            dcc.Graph(id="speed-update-graph", className="is-centered")
             ],
         className=box_style + " has-margin-top-30"
      ),
