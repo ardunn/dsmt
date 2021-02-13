@@ -290,6 +290,7 @@ textarea {
 }
 
 html {
+
   box-sizing: border-box;
 }
 
@@ -330,7 +331,7 @@ th:not([align]) {
 }
 
 html {
-  background-color: white;
+ background-color: #363636;
   font-size: 16px;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
@@ -370,6 +371,7 @@ pre {
 }
 
 body {
+  background-color: #363636;
   color: #4a4a4a;
   font-size: 1em;
   font-weight: 400;

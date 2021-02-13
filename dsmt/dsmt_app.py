@@ -178,13 +178,7 @@ def html_uptime_graphs(prev_data):
 
     prev_data["datetimes"].append(results["timestamp"])
 
-
-    ping_title = f"Ping {common_title}"
-    download_title = f"Download {common_title}"
-    upload_title = f"Upload {common_title}"
-
-
-    fig = plotly.tools.make_subplots(rows=3, cols=1, subplot_titles=(ping_title, download_title, upload_title))
+    fig = plotly.tools.make_subplots(rows=3, cols=1, subplot_titles=("Ping", "Download", "Upload"))
 
     fig.append_trace({
         "y": prev_data["pings"],
@@ -212,7 +206,7 @@ def html_uptime_graphs(prev_data):
 
     fig.update_layout(
         autosize=False,
-        width=1200,
+        # width=1200,
         height=1000,
         margin=dict(
             l=50,
@@ -264,8 +258,8 @@ def update_uptime_graphs(interval, figure):
 
 
 @app.callback(
-    Output("speed-title", "children"),
-    Input("interval-speed")
+    Output("speed-info", "children"),
+    Input("interval-speed", "n_intervals")
 )
 def update_uptime_title(interval):
     results = test_speed(ping_only=True)
@@ -275,8 +269,13 @@ def update_uptime_title(interval):
     ip = results["client"]["ip"]
     isp = results["client"]["isp"]
 
-    html_url = html.Div(f"{host_url}"
-    html_info = html.Div(f"{host_name} from {ip} (ISP {isp})"
+    html_url = html.Div(f"{host_url}", className=monospace_style + " has-text-white is-5")
+    html_info = html.Div(f"{host_name} from {ip} (ISP {isp})", className="has-text-white is-3")
+    return html.Div(children=[
+        html_url,
+        html_info
+    ],
+    className="has-margin-20")
 
 
 app.layout = html.Div(children=[
@@ -289,8 +288,9 @@ app.layout = html.Div(children=[
 
     html.Div(
         children=[
-            html.Div(id="speed-title", children="ISP Monitoring", className=header_style),
-            dcc.Graph(id="speed-update-graph")
+            html.Div(children="ISP Monitoring", className=header_style),
+            html.Div(id="speed-info"),
+            dcc.Graph(id="speed-update-graph", className="is-centered")
             ],
         className=box_style
      ),
