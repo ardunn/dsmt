@@ -7,6 +7,7 @@ import os
 import json
 import datetime
 
+import pandas as pd
 import docker
 import dash
 import dash_html_components as html
@@ -32,6 +33,7 @@ update_interval = CONFIG["dsmt"]["update_interval"]
 speed_interval = int(CONFIG["dsmt"]["inet_interval"])
 port = int(CONFIG["dsmt"]["port"])
 interval = 0.1
+isp_path = os.path.join(os.path.dirname(CONFIG_FILE), "isp.csv")
 
 table_header_style = "has-text-white"
 table_style = "table is-bordered is-centered has-text-white has-background-dark"
@@ -159,9 +161,9 @@ def html_status_tables():
 
 def html_uptime_graphs(prev_data):
 
-    print("about to run speedtest")
-
     results = test_speed()
+
+
 
     if results:
         prev_data["pings"].append(results["ping"])
@@ -177,6 +179,10 @@ def html_uptime_graphs(prev_data):
     ping_recent = int(prev_data["pings"][-1])
     ping_recent = f"{ping_recent} ms" if ping_recent < 10000 else "No connection"
     ping_title = f"Ping (current = {ping_recent})"
+
+
+    # save the file in some persistent filename
+    pd.DataFrame(prev_data).to_csv(isp_path, index=False)
 
 
     down_recent = prev_data["downs"][-1]
@@ -227,7 +233,8 @@ def html_uptime_graphs(prev_data):
             t=100,
             pad=4
         ),
-        template="plotly_dark"
+        template="plotly_dark",
+        showlegend=False
     )
     return fig
 
@@ -264,7 +271,12 @@ def update_uptime_graphs(interval, figure):
 
         prev_data = {"pings": pings, "downs": download, "ups": upload, "datetimes": datetimes}
     else:
-        prev_data = {"pings": [], "downs": [], "ups": [], "datetimes": []}
+
+        if os.path.exists(isp_path):
+            df = pd.read_csv("isp.csv", index_col=False)
+            prev_data = {c: df[c] for c in ["pings", "downs", "ups", "datetimes"]}
+        else:
+            prev_data = {"pings": [], "downs": [], "ups": [], "datetimes": []}
     return html_uptime_graphs(prev_data)
 
 
