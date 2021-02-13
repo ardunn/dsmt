@@ -159,11 +159,11 @@ def html_status_tables():
     return html.Div(id="display", children=[proc_div, divider, docker_div, divider, systemd_div])
 
 
+
+
 def html_uptime_graphs(prev_data):
 
     results = test_speed()
-
-
 
     if results:
         prev_data["pings"].append(results["ping"])
@@ -176,14 +176,13 @@ def html_uptime_graphs(prev_data):
         prev_data["ups"].append(0)
         prev_data["datetimes"].append(datetime.datetime.now().isoformat())
 
-    ping_recent = int(prev_data["pings"][-1])
-    ping_recent = f"{ping_recent} ms" if ping_recent < 10000 else "No connection"
-    ping_title = f"Ping (current = {ping_recent})"
-
-
     # save the file in some persistent filename
     pd.DataFrame(prev_data).to_csv(isp_path, index=False)
 
+
+    ping_recent = int(prev_data["pings"][-1])
+    ping_recent = f"{ping_recent} ms" if ping_recent < 10000 else "No connection"
+    ping_title = f"Ping (current = {ping_recent})"
 
     down_recent = prev_data["downs"][-1]
     down_title = f"Download (current = {int(down_recent)} MBits/s)"
@@ -274,7 +273,7 @@ def update_uptime_graphs(interval, figure):
 
         if os.path.exists(isp_path):
             df = pd.read_csv("isp.csv", index_col=False)
-            prev_data = {c: df[c] for c in ["pings", "downs", "ups", "datetimes"]}
+            prev_data = {c: df[c].tolist() for c in ["pings", "downs", "ups", "datetimes"]}
         else:
             prev_data = {"pings": [], "downs": [], "ups": [], "datetimes": []}
     return html_uptime_graphs(prev_data)
@@ -318,7 +317,10 @@ app.layout = html.Div(children=[
         children=[
             html.Div(children="ISP Monitoring", className=header_style),
             html.Div(id="speed-info"),
-            dcc.Graph(id="speed-update-graph", className="is-centered")
+
+            dcc.Loading(
+                dcc.Graph(id="speed-update-graph", className="is-centered")
+            )
             ],
         className=box_style + " has-margin-top-30"
      ),
