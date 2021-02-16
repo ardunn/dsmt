@@ -73,6 +73,7 @@ DSMT options are under the `dsmt` section of `config.json`.
 - `inet_interval`: interval in milliseconds to check the ISP connection
 - `server_name`: the display name of your server
 - `description`: the display description of your server
+- `inet_days_range`: the number of days to show on the isp monitoring graph
 ---
 
 ### Usage

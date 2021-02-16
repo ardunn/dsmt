@@ -32,6 +32,7 @@ check_img = html.Img(src="/assets/check.png", style={"width": "30px", "height": 
 x_img = html.Img(src="/assets/x.png", style={"width": "30px", "height": "30px"})
 update_interval = CONFIG["dsmt"]["update_interval"]
 speed_interval = int(CONFIG["dsmt"]["inet_interval"])
+days_range = int(CONFIG["dsmt"]["inet_days_range"])
 port = int(CONFIG["dsmt"]["port"])
 interval = 0.1
 isp_path = os.path.join(os.path.dirname(CONFIG_FILE), "isp.csv")
@@ -182,8 +183,11 @@ def html_uptime_graphs(prev_data):
 
     # save the file in some persistent filename
     pd.DataFrame(prev_data).to_csv(isp_path, index=False)
+    return make_uptime_figures(prev_data)
 
 
+
+def make_uptime_figures(prev_data):
     ping_recent = int(prev_data["pings"][-1])
     ping_recent = f"{ping_recent} ms" if ping_recent < 10000 else "No connection"
     ping_title = f"Ping (current = {ping_recent})"
@@ -220,14 +224,19 @@ def html_uptime_graphs(prev_data):
         "type": "scatter",
     }, 3, 1)
 
+
+    now = datetime.datetime.now()
+    daterange = [now - datetime.timedelta(days=days_range), now]
+
     fig.update_yaxes(title_text="ping (ms) [log scale]", type="log", row=1, col=1)
     fig.update_yaxes(title_text="MBit/s", row=2, col=1)
     fig.update_yaxes(title_text="MBit/s", row=3, col=1)
-    fig.update_xaxes(showticklabels=False, row=1, col=1)
-    fig.update_xaxes(showticklabels=False, row=2, col=1)
+    fig.update_xaxes(showticklabels=False, row=1, col=1, range=daterange)
+    fig.update_xaxes(showticklabels=False, row=2, col=1, range=daterange)
+    fig.update_xaxes(range=daterange)
     fig.update_layout(
-        autosize=False,
-        # width=1200,
+        autosize=True,
+        # width=2000,
         height=1000,
         margin=dict(
             l=50,
@@ -242,6 +251,13 @@ def html_uptime_graphs(prev_data):
     return fig
 
 
+def get_historical_data():
+    if os.path.exists(isp_path):
+        df = pd.read_csv("isp.csv", index_col=False)
+        prev_data = {c: df[c].tolist() for c in ["pings", "downs", "ups", "datetimes"]}
+    else:
+        prev_data = {"pings": [], "downs": [], "ups": [], "datetimes": []}
+    return prev_data
 
 
 @app.callback(
@@ -274,12 +290,8 @@ def update_uptime_graphs(interval, figure):
 
         prev_data = {"pings": pings, "downs": download, "ups": upload, "datetimes": datetimes}
     else:
+        return get_historical_data()
 
-        if os.path.exists(isp_path):
-            df = pd.read_csv("isp.csv", index_col=False)
-            prev_data = {c: df[c].tolist() for c in ["pings", "downs", "ups", "datetimes"]}
-        else:
-            prev_data = {"pings": [], "downs": [], "ups": [], "datetimes": []}
     return html_uptime_graphs(prev_data)
 
 
@@ -289,8 +301,9 @@ def update_uptime_graphs(interval, figure):
     Input("interval-speed", "n_intervals")
 )
 def update_uptime_title(interval):
+    print("running speedtest")
     results = test_speed(ping_only=True)
-
+    print("speedtest run!")
     if results:
         host_url = results["server"]["url"]
         host_name = results["server"]["name"]
@@ -314,12 +327,15 @@ def update_uptime_title(interval):
     Input("tog-switch", "value")
 )
 def toggle_isp_testing(toggle_value):
+
+    prev_data = get_historical_data()
+    tmp_figure = make_uptime_figures(prev_data)
     if toggle_value:
         return html.Div(
                 id="graphs-holder",
                 children=[
                     html.Div(id="speed-info"),
-                    dcc.Graph(id="speed-update-graph", className="is-centered"),
+                    dcc.Graph(id="speed-update-graph", className="is-centered", figure=tmp_figure),
             dcc.Interval(
                     id='interval-speed',
                     interval=speed_interval,  # in milliseconds
@@ -327,7 +343,7 @@ def toggle_isp_testing(toggle_value):
                 )
                     ])
     else:
-        return html.Div("ISP monitoring is disabled.")
+        return html.Div("ISP monitoring is disabled.", className=page_description_style)
 
 
 
@@ -356,5 +372,5 @@ app.title = "dmst"
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=port)
-    # app.run_server(host="0.0.0.0", port=port)
+    # app.run_server(debug=True, port=port)
+    app.run_server(host="0.0.0.0", port=port)
