@@ -12,6 +12,7 @@ import docker
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_daq as daq
 from dash.dependencies import Input, Output, State
 import plotly
 import psutil
@@ -308,6 +309,28 @@ def update_uptime_title(interval):
         return html.Div("No connection.", className="has-margin-20 has-text-white is-5")
 
 
+@app.callback(
+    Output("isp-testing-holder", "children"),
+    Input("tog-switch", "value")
+)
+def toggle_isp_testing(toggle_value):
+    if toggle_value:
+        return html.Div(
+                id="graphs-holder",
+                children=[
+                    html.Div(id="speed-info"),
+                    dcc.Graph(id="speed-update-graph", className="is-centered"),
+            dcc.Interval(
+                    id='interval-speed',
+                    interval=speed_interval,  # in milliseconds
+                    n_intervals=0
+                )
+                    ])
+    else:
+        return html.Div("ISP monitoring is disabled.")
+
+
+
 app.layout = html.Div(children=[
     html.Div([html.Div(server_name, className=page_header_style), html.Div(server_description, className=page_description_style)], className="has-margin-20"),
     html.Div(id="holder-service"),
@@ -320,16 +343,11 @@ app.layout = html.Div(children=[
     html.Div(
         children=[
             html.Div(children="ISP Monitoring", className=header_style),
-            html.Div(id="speed-info"),
-            dcc.Graph(id="speed-update-graph", className="is-centered")
-            ],
+            daq.ToggleSwitch(id="tog-switch", size=75, label='Toggle ISP Monitoring', labelPosition='bottom', className=page_description_style),
+            html.Div(id="isp-testing-holder")
+        ],
         className=box_style + " has-margin-top-30"
      ),
-    dcc.Interval(
-        id='interval-speed',
-        interval=speed_interval,  # in milliseconds
-        n_intervals=0
-    ),
 ],
 className="container is-centered has-background-dark"
 )
@@ -338,5 +356,5 @@ app.title = "dmst"
 
 
 if __name__ == '__main__':
-    # app.run_server(debug=True, port=port)
-    app.run_server(host="0.0.0.0", port=port)
+    app.run_server(debug=True, port=port)
+    # app.run_server(host="0.0.0.0", port=port)
