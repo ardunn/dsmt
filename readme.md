@@ -42,7 +42,7 @@ pip install dmst
 Navigate to the `./dmst/config.json` file. This contains an example of
 the processes, systemd services, and docker containers dmst can monitor.
 
-##### Processes (`ps`)
+#### Processes (`ps`)
 Each process is a key-value store which requires:
 - **name**: human-facing name of the process
 - **query**: the name of the process which must be contained within the desired process(es)' name. 
@@ -50,19 +50,19 @@ Each process is a key-value store which requires:
 - **description**: your description of the process
 
 
-##### Docker (`docker`)
+#### Docker (`docker`)
 Docker usage requires only one True/False key. Set the `docker` key to `true` to automatically monitor all docker processes.
 
 
 
-##### SystemD (work in progress) (`systemd`)
+#### SystemD (work in progress) (`systemd`)
 SystemD processes require the same as regular processes:
 - **name**: human-facing name of the process
 - **query**: the name of the process which must be contained within the desired process(es)' name. 
 - **ports**: a list of active ports which are used by this process
 - **description**: your description of the process
 
-##### ISP Monitoring (`isp`)
+#### ISP Monitoring (`isp`)
 - `inet_interval`: interval in milliseconds to check the ISP connection
 - `inet_days_range`: the number of days to show on the isp monitoring graph
 
