@@ -402,7 +402,7 @@ app.layout = html.Div(children=[
     html.Div(
         children=[
             html.Div(children="ISP Monitoring", className=header_style),
-            daq.ToggleSwitch(id="tog-switch", size=75, label='Toggle ISP Monitoring', labelPosition='bottom', theme="dark", className=page_description_style, value=server_state()["isp_monitoring"]),
+            daq.ToggleSwitch(id="tog-switch", size=50, label='Toggle ISP Monitoring', labelPosition='bottom', color="#25be76", className=page_description_style, value=server_state()["isp_monitoring"]),
             html.Div(id="isp-testing-holder", children=html.Div(
                 id="graphs-holder",
                 children=[

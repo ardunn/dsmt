@@ -60,6 +60,7 @@ coverage.xml
 
 # Local file
 *.csv
+server_state.json
 
 # Translations
 *.mo
