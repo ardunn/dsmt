@@ -7,6 +7,7 @@ import os
 import json
 import datetime
 
+from flask import request
 import pandas as pd
 import docker
 import dash
@@ -31,8 +32,8 @@ with open(CONFIG_FILE, "r") as f:
 check_img = html.Img(src="/assets/check.png", style={"width": "30px", "height": "30px"})
 x_img = html.Img(src="/assets/x.png", style={"width": "30px", "height": "30px"})
 update_interval = CONFIG["dsmt"]["update_interval"]
-speed_interval = int(CONFIG["dsmt"]["inet_interval"])
-days_range = int(CONFIG["dsmt"]["inet_days_range"])
+speed_interval = int(CONFIG["isp"]["inet_interval"])
+days_range = int(CONFIG["isp"]["inet_days_range"])
 port = int(CONFIG["dsmt"]["port"])
 interval = 0.1
 isp_path = os.path.join(os.path.dirname(CONFIG_FILE), "isp.csv")
