@@ -349,7 +349,7 @@ def update_uptime_title(interval, tog_switch_state):
             isp = results["client"]["isp"]
 
             html_url = html.Div(f"{host_url}", className=monospace_style + " has-text-white is-5")
-            html_info = html.Div(f"{host_name} from {ip} (ISP {isp})", className="has-text-white is-3")
+            html_info = html.Div(f"{host_name} from {ip} (ISP {isp}) at {datetime.datetime.now().isoformat()}", className="has-text-white is-3")
 
             return html.Div(children=[
                 html_url,

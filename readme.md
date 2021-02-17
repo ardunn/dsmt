@@ -6,7 +6,7 @@ Written in python and plotly dash.
 
 
 
-![img](./demo.png)
+![img](./screenshot.png)
 
 
 ### Motivation
