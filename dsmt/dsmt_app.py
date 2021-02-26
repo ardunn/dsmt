@@ -93,7 +93,7 @@ def html_status_tables():
             html.Td(check_img if running else x_img),
             html.Td(pids_formatted),
             html.Td(pinfo['description']),
-            html.Td(pinfo["ports"]),
+            html.Td(",".join([str(port) for port in pinfo["ports"]])),
             html.Td(plist_cpu)
         ]))
 

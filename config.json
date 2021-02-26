@@ -35,6 +35,11 @@
       "query": "dogecoin-qt",
       "description": "Dogecoin-QT Full Node",
       "ports": [22556]
+    },
+    "vpn": {
+      "query": "vpn",
+      "description": "OpenVPN virtual private network",
+      "ports": [1194, 443]
     }
   },
   "systemd": {
