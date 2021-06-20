@@ -7,11 +7,13 @@ import os
 import json
 import datetime
 
+from flask import request
 import pandas as pd
 import docker
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_daq as daq
 from dash.dependencies import Input, Output, State
 import plotly
 import psutil
@@ -30,12 +32,18 @@ with open(CONFIG_FILE, "r") as f:
 check_img = html.Img(src="/assets/check.png", style={"width": "30px", "height": "30px"})
 x_img = html.Img(src="/assets/x.png", style={"width": "30px", "height": "30px"})
 update_interval = CONFIG["dsmt"]["update_interval"]
-speed_interval = int(CONFIG["dsmt"]["inet_interval"])
+speed_interval = int(CONFIG["isp"]["inet_interval"])
+days_range = int(CONFIG["isp"]["inet_days_range"])
 port = int(CONFIG["dsmt"]["port"])
 interval = 0.1
 isp_path = os.path.join(os.path.dirname(CONFIG_FILE), "isp.csv")
 server_name = CONFIG["dsmt"]["server_name"]
 server_description = CONFIG["dsmt"]["server_description"]
+server_file = os.path.join(os.path.dirname(CONFIG_FILE), "server_state.json")
+default_server_state = \
+    {
+        "isp_monitoring": False,
+    }
 
 page_header_style = "title has-text-white is-1"
 page_description_style = "has-text-white is-4"
@@ -85,7 +93,7 @@ def html_status_tables():
             html.Td(check_img if running else x_img),
             html.Td(pids_formatted),
             html.Td(pinfo['description']),
-            html.Td(pinfo["ports"]),
+            html.Td(",".join([str(port) for port in pinfo["ports"]])),
             html.Td(plist_cpu)
         ]))
 
@@ -164,9 +172,11 @@ def html_status_tables():
     return html.Div(id="display", children=[proc_div, divider, docker_div, divider, systemd_div])
 
 
-def html_uptime_graphs(prev_data):
+def run_speedtest_update(prev_data):
 
+    print("running full speedtest")
     results = test_speed()
+    print("done running full speedtest")
 
     if results:
         prev_data["pings"].append(results["ping"])
@@ -181,8 +191,11 @@ def html_uptime_graphs(prev_data):
 
     # save the file in some persistent filename
     pd.DataFrame(prev_data).to_csv(isp_path, index=False)
+    return make_uptime_figures(prev_data)
 
 
+
+def make_uptime_figures(prev_data):
     ping_recent = int(prev_data["pings"][-1])
     ping_recent = f"{ping_recent} ms" if ping_recent < 10000 else "No connection"
     ping_title = f"Ping (current = {ping_recent})"
@@ -219,14 +232,19 @@ def html_uptime_graphs(prev_data):
         "type": "scatter",
     }, 3, 1)
 
+
+    now = datetime.datetime.now()
+    daterange = [now - datetime.timedelta(days=days_range), now]
+
     fig.update_yaxes(title_text="ping (ms) [log scale]", type="log", row=1, col=1)
     fig.update_yaxes(title_text="MBit/s", row=2, col=1)
     fig.update_yaxes(title_text="MBit/s", row=3, col=1)
-    fig.update_xaxes(showticklabels=False, row=1, col=1)
-    fig.update_xaxes(showticklabels=False, row=2, col=1)
+    fig.update_xaxes(showticklabels=False, row=1, col=1, range=daterange)
+    fig.update_xaxes(showticklabels=False, row=2, col=1, range=daterange)
+    fig.update_xaxes(range=daterange)
     fig.update_layout(
-        autosize=False,
-        # width=1200,
+        autosize=True,
+        # width=2000,
         height=1000,
         margin=dict(
             l=50,
@@ -240,6 +258,34 @@ def html_uptime_graphs(prev_data):
     )
     return fig
 
+
+def get_historical_data():
+    if os.path.exists(isp_path):
+        df = pd.read_csv("isp.csv", index_col=False)
+        prev_data = {c: df[c].tolist() for c in ["pings", "downs", "ups", "datetimes"]}
+    else:
+        prev_data = {"pings": [], "downs": [], "ups": [], "datetimes": []}
+    return prev_data
+
+
+
+def server_state(write=None):
+    # Write the state
+    if write is not None:
+        with open(server_file, "w") as f:
+            json.dump(write, f)
+            return None
+
+    # Obtain the state, if it exists
+    else:
+        if not os.path.exists(server_file):
+            with open(server_file, "w") as f:
+                json.dump(default_server_state, f)
+            return default_server_state
+        else:
+            with open(server_file, "r") as f:
+                state = json.load(f)
+            return state
 
 
 
@@ -255,58 +301,94 @@ def update_output_div(input_value):
 @app.callback(
     Output('speed-update-graph', 'figure'),
     Input('interval-speed', 'n_intervals'),
+    State("tog-switch", "value"),
     State('speed-update-graph', 'figure')
 )
-def update_uptime_graphs(interval, figure):
+def update_uptime_graphs(interval, tog_value, figure):
 
-    if figure:
-        ping_data = figure["data"][0]
-        datetimes = ping_data["x"]
-        pings = ping_data["y"]
+        if figure and tog_value:
+            ping_data = figure["data"][0]
+            datetimes = ping_data["x"]
+            pings = ping_data["y"]
 
+            down_data = figure["data"][1]
+            download = down_data["y"]
 
-        down_data = figure["data"][1]
-        download = down_data["y"]
+            up_data = figure["data"][2]
+            upload = up_data["y"]
 
-        up_data = figure["data"][2]
-        upload = up_data["y"]
+            prev_data = {"pings": pings, "downs": download, "ups": upload, "datetimes": datetimes}
+            return run_speedtest_update(prev_data)
 
-        prev_data = {"pings": pings, "downs": download, "ups": upload, "datetimes": datetimes}
-    else:
-
-        if os.path.exists(isp_path):
-            df = pd.read_csv("isp.csv", index_col=False)
-            prev_data = {c: df[c].tolist() for c in ["pings", "downs", "ups", "datetimes"]}
         else:
-            prev_data = {"pings": [], "downs": [], "ups": [], "datetimes": []}
-    return html_uptime_graphs(prev_data)
+            return make_uptime_figures(get_historical_data())
 
+
+@app.callback(
+    Output("interval-speed", "disabled"),
+    Input("tog-switch", "value")
+)
+def toggle_monitoring(tog_value):
+    return tog_value != True
 
 
 @app.callback(
     Output("speed-info", "children"),
-    Input("interval-speed", "n_intervals")
+    Input("interval-speed", "n_intervals"),
+    State("tog-switch", "value")
 )
-def update_uptime_title(interval):
-    results = test_speed(ping_only=True)
+def update_uptime_title(interval, tog_switch_state):
+    if tog_switch_state:
+        print("running ping only speedtest")
+        results = test_speed(ping_only=True)
+        print("ping only speedtest run!")
+        if results:
+            host_url = results["server"]["url"]
+            host_name = results["server"]["name"]
+            ip = results["client"]["ip"]
+            isp = results["client"]["isp"]
 
-    if results:
-        host_url = results["server"]["url"]
-        host_name = results["server"]["name"]
-        ip = results["client"]["ip"]
-        isp = results["client"]["isp"]
+            html_url = html.Div(f"{host_url}", className=monospace_style + " has-text-white is-5")
+            html_info = html.Div(f"{host_name} from {ip} (ISP {isp}) at {datetime.datetime.now().isoformat()}", className="has-text-white is-3")
 
-        html_url = html.Div(f"{host_url}", className=monospace_style + " has-text-white is-5")
-        html_info = html.Div(f"{host_name} from {ip} (ISP {isp})", className="has-text-white is-3")
-
-        return html.Div(children=[
-            html_url,
-            html_info
-        ],
-        className="has-margin-20")
+            return html.Div(children=[
+                html_url,
+                html_info
+            ],
+            className="has-margin-20")
+        else:
+            return html.Div("No connection.", className="has-margin-20 has-text-white is-5")
     else:
-        return html.Div("No connection.", className="has-margin-20 has-text-white is-5")
+        return html.Div(children="")
 
+@app.callback(
+    Output("isp-testing-holder", "style"),
+    Input("tog-switch", "value"),
+)
+def toggle_isp_testing(toggle_value):
+    if toggle_value:
+        # update the server state
+        server_state(write={"isp_monitoring": True})
+        return {'display': 'block'}
+    else:
+        server_state(write={"isp_monitoring": False})
+        return {'display': 'none'}
+
+
+# If another user on the webpage toggles it off, make sure the page the first user is on reflects the monitoring state change
+@app.callback(
+    Output("tog-switch", "value"),
+    Input("sync_server_state", "n_intervals"),
+)
+def sync_server_state_from_fs(interval):
+    state = server_state()
+
+    isp_monitoring_state = state["isp_monitoring"]
+    return isp_monitoring_state
+
+
+prev_data = get_historical_data()
+tmp_figure = make_uptime_figures(prev_data)
 
 app.layout = html.Div(children=[
     html.Div([html.Div(server_name, className=page_header_style), html.Div(server_description, className=page_description_style)], className="has-margin-20"),
@@ -320,16 +402,22 @@ app.layout = html.Div(children=[
     html.Div(
         children=[
             html.Div(children="ISP Monitoring", className=header_style),
-            html.Div(id="speed-info"),
-            dcc.Graph(id="speed-update-graph", className="is-centered")
-            ],
+            daq.ToggleSwitch(id="tog-switch", size=50, label='Toggle ISP Monitoring', labelPosition='bottom', color="#25be76", className=page_description_style, value=server_state()["isp_monitoring"]),
+            html.Div(id="isp-testing-holder", children=html.Div(
+                id="graphs-holder",
+                children=[
+                    html.Div(id="speed-info"),
+                    dcc.Graph(id="speed-update-graph", className="is-centered", figure=tmp_figure),
+            dcc.Interval(
+                    id='interval-speed',
+                    interval=speed_interval,  # in milliseconds
+                    n_intervals=0
+                )
+                    ])),
+            dcc.Interval(id="sync_server_state", interval=1000)
+        ],
         className=box_style + " has-margin-top-30"
      ),
-    dcc.Interval(
-        id='interval-speed',
-        interval=speed_interval,  # in milliseconds
-        n_intervals=0
-    ),
 ],
 className="container is-centered has-background-dark"
 )
@@ -339,4 +427,5 @@ app.title = "dmst"
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=port)
+    #app.run_server(debug=True, host="0.0.0.0", port=port)
     # app.run_server(host="0.0.0.0", port=port)

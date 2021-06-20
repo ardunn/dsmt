@@ -2,9 +2,13 @@
   "dsmt": {
     "update_interval": 5000,
     "port": 57031,
-    "inet_interval": 600000,
     "server_name": "Ares",
     "server_description": "Alex's really nerdy server."
+  },
+  "isp":
+  {
+    "inet_interval": 1800000,
+    "inet_days_range": 3
   },
   "ps": {
     "dsmt_app":{
@@ -31,6 +35,11 @@
       "query": "dogecoin-qt",
       "description": "Dogecoin-QT Full Node",
       "ports": [22556]
+    },
+    "vpn": {
+      "query": "vpn",
+      "description": "OpenVPN virtual private network",
+      "ports": [1194, 443]
     }
   },
   "systemd": {
