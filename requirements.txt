@@ -1,6 +1,6 @@
 docker==4.4.1
 psutil==5.7.3
-dash==1.19.0
+dash==1.20.0
 speedtest-cli==2.1.2
 pandas==1.2.1
 
