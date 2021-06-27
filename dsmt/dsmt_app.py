@@ -22,7 +22,7 @@ from dsmt.process import ps_query
 from dsmt.speed import test_speed
 
 
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, title="dsmt", update_title=None)
 
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../config.json")
 with open(CONFIG_FILE, "r") as f:
@@ -421,8 +421,6 @@ app.layout = html.Div(children=[
 ],
 className="container is-centered has-background-dark"
 )
-
-app.title = "dmst"
 
 
 if __name__ == '__main__':
